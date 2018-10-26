@@ -1,0 +1,2 @@
+CONLL2003 data: https://github.com/davidsbatista/NER-datasets
+GermEval2014 data: https://sites.google.com/site/germeval2014ner/data
