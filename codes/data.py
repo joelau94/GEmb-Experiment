@@ -86,7 +86,8 @@ def build_dicts(records, output_file, min_freq=2):
   dicts = {}
   meta = {}
 
-  dicts['i2w'] = ['_UNK_'] + [k for k, v in word_count if v >= min_freq]
+  dicts['i2w'] = ['_UNK_'] + \
+      [k for k, v in word_count.iteritems() if v >= min_freq]
   dicts['w2i'] = defaultdict(int)
   dicts['w2i'].update({w: i for i, w in enumerate(dicts['i2w'])})
 
@@ -112,13 +113,13 @@ def preprocess_train(task, raw_data_file, dictfile, datafile, min_freq=2):
   if task == 'tagging':
     records = list(map(
         lambda r: [list(map(lambda w: dicts['w2i'][w], r[0])),
-                   list(map(lambda t: dicts['t2i'][t], r[1]))]
+                   list(map(lambda t: dicts['t2i'][t], r[1]))],
         records
     ))
   elif task == 'classification':
     records = list(map(
         lambda r: [list(map(lambda w: dicts['w2i'][w], r[0])),
-                   dicts['t2i'][t]]
+                   dicts['t2i'][t]],
         records
     ))
 
@@ -133,13 +134,13 @@ def preprocess_dev_test(task, raw_data_file, dictfile, datafile):
   if task == 'tagging':
     records = list(map(
         lambda r: [list(map(lambda w: dicts['w2i'][w], r[0])),
-                   list(map(lambda t: dicts['t2i'][t], r[1]))]
+                   list(map(lambda t: dicts['t2i'][t], r[1]))],
         records
     ))
   elif task == 'classification':
     records = list(map(
         lambda r: [list(map(lambda w: dicts['w2i'][w], r[0])),
-                   dicts['t2i'][t]]
+                   dicts['t2i'][t]],
         records
     ))
 
