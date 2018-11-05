@@ -2,6 +2,7 @@ import os
 import cPickle as pkl
 
 import numpy as np
+import tensorflow as tf
 
 import data
 import models
@@ -126,7 +127,7 @@ class Experiment(object):
                            global_step=global_steps)
           # validation
           X, Y, sent_length, oov_mask = \
-              dev_data.get_next(len(dev_data['records']))
+              dev_data.get_next(len(dev_data.records))
           corr, total = sess.run(
               [correct_count, total_count],
               feed_dict={
@@ -143,7 +144,7 @@ class Experiment(object):
                          global_step=global_steps)
         # validation
         X, Y, sent_length, oov_mask = \
-            dev_data.get_next(len(dev_data['records']))
+            dev_data.get_next(len(dev_data.records))
         corr, total = sess.run(
             [correct_count, total_count],
             feed_dict={
@@ -219,7 +220,7 @@ class Experiment(object):
           train_saver.save(sess, self.config['ckpt'])
           # validation
           X, Y, sent_length, oov_mask = \
-              dev_data.get_next(len(dev_data['records']))
+              dev_data.get_next(len(dev_data.records))
           corr, total = sess.run(
               [correct_count, total_count],
               feed_dict={
@@ -236,7 +237,7 @@ class Experiment(object):
                          global_step=global_steps)
         # validation
         X, Y, sent_length, oov_mask = \
-            dev_data.get_next(len(dev_data['records']))
+            dev_data.get_next(len(dev_data.records))
         corr, total = sess.run(
             [correct_count, total_count],
             feed_dict={
@@ -276,7 +277,7 @@ class Experiment(object):
 
       print('Testing ...')
       X, Y, sent_length, oov_mask = \
-          test_data.get_next(len(test_data['records']))
+          test_data.get_next(len(test_data.records))
       corr, total = sess.run(
           [correct_count, total_count],
           feed_dict={

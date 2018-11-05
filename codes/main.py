@@ -10,6 +10,7 @@ def main():
 
   parser.add_argument('--config-file', type=str,
                       default='../models/config.pkl')
+  parser.add_argument('--start-over', type=bool, default=False)
   parser.add_argument('--train-gemb', type=bool, default=False)
 
   parser.add_argument('--train-data-file', type=str,
@@ -19,7 +20,7 @@ def main():
   parser.add_argument('--test-data-file', type=str,
                       default='../data/test.pkl')
 
-  parser.add_argument('--task', type=str,
+  parser.add_argument('--task', type=str, default='tagging',
                       choices=['tagging', 'classification'])
   parser.add_argument('--use-gemb', type=bool, default=True)
   parser.add_argument('--keep-prob', type=float, default=0.9)
@@ -28,7 +29,7 @@ def main():
                       default='../data/dicts.pkl')
   parser.add_argument('--embed-dim', type=int, default=300)
   parser.add_argument('--hidden-dims', type=int, nargs='+',
-                      default=512)
+                      default=[256,256])
 
   parser.add_argument('--seed', type=int, default=23)
   parser.add_argument('--lr', type=float, default=0.1)
@@ -53,7 +54,7 @@ def main():
   num_class = len(dicts['i2t'])
 
   cfg = experiment.Config()
-  if os.path.exists(args.config_file):
+  if not args.start_over and os.path.exists(args.config_file):
     cfg.load(args.config_file)
   else:
     cfg.config = {

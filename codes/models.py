@@ -89,8 +89,6 @@ class LSTMEncoder(object):
       )
 
       final_states = tf.concat([states[0][-1].h, states[1][-1].h], axis=-1)
-      final_states = tf.reshape(final_states,
-                                [batch_size, thread_max_len, -1])
 
       return final_states, outputs
 
@@ -126,21 +124,28 @@ class LSTMwithGEmb(object):
                              reuse=self.reuse)
       final_states, outputs = bot_lstm(word_embeddings, sent_length)
 
-    if use_gemb:
+    if self.use_gemb:
       _, word_dist = self.get_word_dist(outputs)
+
+      batch_size = tf.shape(word_dist)[0]
+      max_length = tf.shape(word_dist)[1]
+      vocab_size = tf.shape(word_dist)[2]
 
       # (batch, len, vocab) -> (batch * len, vocab)
       word_dist = tf.reshape(word_dist, [batch_size * max_length, -1])
       # (batch * len, vocab) x (vocab, embed_dim) -> (batch * len, embed_dim)
       gembeddings = tf.reshape(tf.matmul(word_dist, embed_matrix),
                                [batch_size, max_length, -1])
+      oov_mask = tf.expand_dims(oov_mask, axis=-1)
       gembeddings = gembeddings * oov_mask + word_embeddings * (1. - oov_mask)
-      gembeddings *= tf.sequence_mask(sent_length)
+      gembeddings *= tf.expand_dims(
+          tf.sequence_mask(sent_length, dtype=tf.float32),
+          axis=-1)
 
       with tf.variable_scope('bottom_lstm', reuse=True):
         final_states, outputs = bot_lstm(gembeddings, sent_length)
 
-    if hidden_dims:
+    if self.hidden_dims:
       with tf.variable_scope('stack_lstm', reuse=self.reuse):
         stack_lstm = LSTMEncoder(self.hidden_dims,
                                  keep_prob=self.keep_prob,
@@ -151,7 +156,8 @@ class LSTMwithGEmb(object):
     return final_states, outputs
 
   def gemb_train(self, word_ids, word_embeddings, sent_length):
-    batch_size, max_length = tf.shape(word_ids)
+    batch_size = tf.shape(word_ids)[0]
+    max_length = tf.shape(word_ids)[1]
 
     with tf.variable_scope('bottom_lstm', reuse=True):
       bot_lstm = LSTMEncoder([self.bot_hidden_dim],
@@ -167,15 +173,17 @@ class LSTMwithGEmb(object):
     )
     loss = tf.reduce_sum(
         tf.reshape(loss, [batch_size, max_length]) *
-        tf.sequence_mask(sent_length))
+        tf.sequence_mask(sent_length, dtype=tf.float32))
 
     return loss
 
   def get_word_dist(self, output_states, reuse=None):
-    batch_size, max_length, hidden_dim = tf.shape(output_states[0])
+    batch_size = tf.shape(output_states[0])[0]
+    max_length = tf.shape(output_states[0])[1]
+    hidden_dim = tf.shape(output_states[0])[2]
     zero_state = tf.zeros([batch_size, 1, hidden_dim])
 
-    fw_states, bw_states = outputs
+    fw_states, bw_states = output_states
     fw_states = tf.concat([fw_states[:, 1:, :], zero_state], axis=1)
     bw_states = tf.concat([zero_state, bw_states[:, :-1, :]], axis=1)
     offset_states = tf.concat([fw_states, bw_states], axis=-1)
@@ -214,8 +222,8 @@ class BiLstmModel(object):
                                keep_prob=keep_prob,
                                reuse=reuse)
 
-    self.word_ids = tf.placeholder(dtype=tf.int32, shape=(None, None))
-    self.sent_length = tf.placeholder(dtype=tf.int32, shape=(None,))
+    self.word_ids = tf.placeholder(dtype=tf.int64, shape=(None, None))
+    self.sent_length = tf.placeholder(dtype=tf.int64, shape=(None,))
     self.oov_mask = tf.placeholder(dtype=tf.float32, shape=(None, None))
 
   @abc.abstractmethod
@@ -235,7 +243,7 @@ class SeqTaggingModel(BiLstmModel):
 
   def __call__(self):
 
-    self.labels = tf.placeholder(dtype=tf.int32, shape=(None, None))
+    self.labels = tf.placeholder(dtype=tf.int64, shape=(None, None))
     embeddings = self.embedder(self.word_ids)
     if self.use_gemb:
       _, outputs = self.bilstm(embeddings,
@@ -254,18 +262,17 @@ class SeqTaggingModel(BiLstmModel):
     self.probabilities = tf.nn.softmax(scores, axis=-1)
     self.predictions = tf.argmax(self.probabilities, axis=-1)
 
-    masks = tf.sequence_mask(self.sent_length)
-    labels = tf.one_hot(self.labels, self.num_class)
+    masks = tf.sequence_mask(self.sent_length, dtype=tf.float32)
 
     losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
-        labels=tf.reshape(labels, [-1, self.num_class]),
+        labels=tf.reshape(self.labels, [-1]),
         logits=tf.reshape(scores, [-1, self.num_class])
     )
-    losses *= masks
+    losses *= tf.reshape(masks, [-1])
 
     self.loss = tf.reduce_mean(losses)
     correct_count = tf.reduce_sum(
-        tf.cast(tf.math.equal(self.predictions, self.labels),
+        tf.cast(tf.equal(self.predictions, self.labels),
                 dtype=tf.float32) * masks)
     total_count = tf.reduce_sum(masks)
 
@@ -276,7 +283,7 @@ class SeqClassifierModel(BiLstmModel):
   """SeqClassifierModel"""
 
   def __call__(self):
-    self.labels = tf.placeholder(dtype=tf.int32, shape=(None,))
+    self.labels = tf.placeholder(dtype=tf.int64, shape=(None,))
     embeddings = self.embedder(self.word_ids)
     if self.use_gemb:
       final_states, _ = self.bilstm(embeddings,
@@ -293,10 +300,8 @@ class SeqClassifierModel(BiLstmModel):
     self.probabilities = tf.nn.softmax(scores, axis=-1)
     self.predictions = tf.argmax(self.probabilities, axis=-1)
 
-    labels = tf.one_hot(self.labels, self.num_class)
-
     losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
-        labels=labels, logits=scores)
+        labels=self.labels, logits=scores)
 
     self.loss = tf.reduce_mean(losses)
     correct_count = tf.reduce_sum(

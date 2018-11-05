@@ -5,6 +5,8 @@ import random
 
 import numpy as np
 
+import pdb
+
 
 class Dataset(object):
   """Dataset"""
@@ -23,7 +25,7 @@ class Dataset(object):
 
     print('{} records loaded.'.format(len(self.records)))
 
-  def get_next(n=1):
+  def get_next(self, n=1):
     if n > len(self.records):
       print('Batch size must be smaller than dataset size.')
       exit(0)
@@ -40,9 +42,9 @@ class Dataset(object):
     xs, ys = list(zip(*batch))
     sent_length = [len(x) for x in xs]
     max_length = max(sent_length)
-    xs = list(map(lambda x: x + [0] * max_length - len(x), xs))
+    xs = list(map(lambda x: x + [0] * (max_length - len(x)), xs))
     if self.meta['task'] == 'tagging':  # tagging / classification
-      ys = list(map(lambda y: y + [0] * max_length - len(y), ys))
+      ys = list(map(lambda y: y + [0] * (max_length - len(y)), ys))
     oov_mask = [[1. if i == self.meta['oov_id'] else 0.
                  for i in x] for x in xs]
 
@@ -82,7 +84,7 @@ def parse_txt(txtfile, task):
 
 def build_dicts(records, output_file, min_freq=2):
   word_count = Counter(itertools.chain(*list(zip(*records))[0]))
-  tag_set = set(itertools.chain(*list(zip(*records))[0]))
+  tag_set = set(itertools.chain(*list(zip(*records))[1]))
   dicts = {}
   meta = {}
 
@@ -126,8 +128,10 @@ def preprocess_train(task, raw_data_file, dictfile, datafile, min_freq=2):
   pkl.dump({'meta': meta, 'records': records},
            open(datafile, 'wb'))
 
+  return meta
 
-def preprocess_dev_test(task, raw_data_file, dictfile, datafile):
+
+def preprocess_dev_test(task, raw_data_file, dictfile, datafile, meta):
   records = parse_txt(raw_data_file, task)
   dicts = pkl.load(open(dictfile, 'rb'))
 
