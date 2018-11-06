@@ -1,5 +1,5 @@
 python codes/main.py \
-    --train-gemb false \
+    --use-gemb \
     --config-file models/pos-en-config.pkl \
     --train-data-file data/pos_en/train.txt \
     --dev-data-file data/pos_en/dev.txt \

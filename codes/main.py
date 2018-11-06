@@ -11,8 +11,8 @@ def main():
 
   parser.add_argument('--config-file', type=str,
                       default='../models/config.pkl')
-  parser.add_argument('--start-over', type=bool, default=False)
-  parser.add_argument('--train-gemb', type=bool, default=False)
+  parser.add_argument('--start-over', dest='start_over', action='store_true')
+  parser.add_argument('--train-gemb', dest='train_gemb', action='store_true')
 
   parser.add_argument('--train-data-file', type=str,
                       default='../data/train.pkl')
@@ -23,7 +23,7 @@ def main():
 
   parser.add_argument('--task', type=str, default='tagging',
                       choices=['tagging', 'classification'])
-  parser.add_argument('--use-gemb', type=bool, default=True)
+  parser.add_argument('--use-gemb', dest='use_gemb', action='store_true')
   parser.add_argument('--keep-prob', type=float, default=0.9)
 
   parser.add_argument('--dictfile', type=str,

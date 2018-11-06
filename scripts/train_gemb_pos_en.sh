@@ -1,3 +1,4 @@
 python codes/main.py \
-    --train-gemb true \
+    --use-gemb \
+    --train-gemb \
     --config-file models/pos-en-config.pkl
