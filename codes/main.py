@@ -1,6 +1,7 @@
 import argparse
 import cPickle as pkl
 import os
+import sys
 
 import experiment
 
@@ -57,6 +58,9 @@ def main():
   if not args.start_over and os.path.exists(args.config_file):
     cfg.load(args.config_file)
   else:
+    if args.train_gemb:
+      print('Model not initialized!')
+      sys.exit(1)
     cfg.config = {
         'train_data_file': args.train_data_file,
         'dev_data_file': args.dev_data_file,

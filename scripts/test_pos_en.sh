@@ -1,0 +1,1 @@
+python codes/test.py --config-file models/pos-en-config.pkl
