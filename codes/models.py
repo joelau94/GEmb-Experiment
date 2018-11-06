@@ -163,7 +163,7 @@ class LSTMwithGEmb(object):
       bot_lstm = LSTMEncoder([self.bot_hidden_dim],
                              keep_prob=self.keep_prob,
                              reuse=True)
-      final_states, outputs = self.bot_lstm(word_embeddings, sent_length)
+      final_states, outputs = bot_lstm(word_embeddings, sent_length)
 
     logits, _ = self.get_word_dist(outputs, self.vocab_size)
     word_one_hot = tf.one_hot(word_ids, self.vocab_size)
