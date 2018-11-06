@@ -1,9 +1,9 @@
 python codes/main.py \
     --use-gemb \
     --config-file models/pos-en-config.pkl \
-    --train-data-file data/pos_en/train.txt \
-    --dev-data-file data/pos_en/dev.txt \
-    --test-data-file data/pos_en/test.txt \
+    --train-data-file data/pos_en/train.pkl \
+    --dev-data-file data/pos_en/dev.pkl \
+    --test-data-file data/pos_en/test.pkl \
     --task tagging \
     --keep-prob 0.9 \
     --dictfile data/pos_en/dicts.pkl \
