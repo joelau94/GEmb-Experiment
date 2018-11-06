@@ -88,7 +88,10 @@ class Experiment(object):
           epsilon=self.config['eps'])
       model_params = tf.trainable_variables()
       grad = tf.gradients(loss, model_params)
-      clip_grad, _ = tf.clip_by_global_norm(grad, self.config['clip_norm'])
+      clip_grad, _ = tf.clip_by_global_norm(
+          grad,
+          self.config['clip_norm'],
+          use_norm=self.config['global_norm'])
 
       self.global_step = tf.Variable(0, name='global_step', trainable=False)
       train_op = optimizer.apply_gradients(zip(clip_grad, model_params),
@@ -109,7 +112,7 @@ class Experiment(object):
       while global_steps <= self.config['max_steps']:
 
         X, Y, sent_length, oov_mask = \
-          train_data.get_next(self.config['batch_size'])
+            train_data.get_next(self.config['batch_size'])
 
         _, step_loss, global_steps = sess.run(
             [train_op, loss, self.global_step],
@@ -190,7 +193,10 @@ class Experiment(object):
       gemb_params = [var for var in tf.trainable_variables()
                      if 'gemb' in var.op.name]
       grad = tf.gradients(loss, gemb_params)
-      clip_grad, _ = tf.clip_by_global_norm(grad, self.config['clip_norm'])
+      clip_grad, _ = tf.clip_by_global_norm(
+          grad,
+          self.config['clip_norm'],
+          use_norm=self.config['global_norm'])
 
       # self.global_step = tf.Variable(0, name='global_step', trainable=False)
       train_op = optimizer.apply_gradients(zip(clip_grad, gemb_params))
@@ -205,7 +211,7 @@ class Experiment(object):
       print('Training ...')
       for step in self.config['gemb_steps']:
         X, Y, sent_length, oov_mask = \
-          train_data.get_next(self.config['batch_size'])
+            train_data.get_next(self.config['batch_size'])
 
         _, step_loss = sess.run(
             [train_op, gemb_loss],
