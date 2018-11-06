@@ -125,7 +125,7 @@ class LSTMwithGEmb(object):
       final_states, outputs = bot_lstm(word_embeddings, sent_length)
 
     if self.use_gemb:
-      _, word_dist = self.get_word_dist(outputs)
+      _, word_dist = self.get_word_dist(outputs, reuse=self.reuse)
 
       batch_size = tf.shape(word_dist)[0]
       max_length = tf.shape(word_dist)[1]
@@ -165,7 +165,7 @@ class LSTMwithGEmb(object):
                              reuse=True)
       final_states, outputs = bot_lstm(word_embeddings, sent_length)
 
-    logits, _ = self.get_word_dist(outputs, self.vocab_size)
+    logits, _ = self.get_word_dist(outputs, self.vocab_size, reuse=True)
     word_one_hot = tf.one_hot(word_ids, self.vocab_size)
     loss = tf.nn.softmax_cross_entropy_with_logits_v2(
         labels=tf.reshape(word_one_hot, [batch_size * max_length, -1]),
@@ -188,7 +188,7 @@ class LSTMwithGEmb(object):
     bw_states = tf.concat([zero_state, bw_states[:, :-1, :]], axis=1)
     offset_states = tf.concat([fw_states, bw_states], axis=-1)
 
-    with tf.variable_scope('gemb', reuse=self.reuse):
+    with tf.variable_scope('gemb', reuse=reuse):
       logits = tf.layers.dense(offset_states, units=self.vocab_size)
       word_dist = tf.nn.softmax(logits, axis=-1)
 
