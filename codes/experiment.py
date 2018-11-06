@@ -31,7 +31,8 @@ class Config(object):
         'beta1': 0.9,
         'beta2': 0.99,
         'eps': 1e-8,
-        'clip_norm': 5.0,
+        'clip_norm': 1.0,
+        'global_norm': 5.0,
 
         'ckpt': '../models/model',
         'max_ckpts': 20,

@@ -37,7 +37,8 @@ def main():
   parser.add_argument('--beta1', type=float, default=0.9)
   parser.add_argument('--beta2', type=float, default=0.99)
   parser.add_argument('--eps', type=float, default=1e-8)
-  parser.add_argument('--clip-norm', type=float, default=5.0)
+  parser.add_argument('--clip-norm', type=float, default=1.0)
+  parser.add_argument('--global-norm', type=float, default=5.0)
 
   parser.add_argument('--ckpt', type=str,
                       default='../models/model')
