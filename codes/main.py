@@ -82,6 +82,7 @@ def main():
         'beta2': args.beta2,
         'eps': args.eps,
         'clip_norm': args.clip_norm,
+        'global_norm': args.global_norm,
 
         'ckpt': args.ckpt,
         'max_ckpts': args.max_ckpts,

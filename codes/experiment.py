@@ -1,5 +1,6 @@
 import os
 import cPickle as pkl
+import math
 
 import numpy as np
 import tensorflow as tf
@@ -130,16 +131,21 @@ class Experiment(object):
           train_saver.save(sess, self.config['ckpt'],
                            global_step=global_steps)
           # validation
-          X, Y, sent_length, oov_mask = \
-              dev_data.get_next(len(dev_data.records))
-          corr, total = sess.run(
-              [correct_count, total_count],
-              feed_dict={
-                  model.word_ids: X,
-                  model.labels: Y,
-                  model.sent_length: sent_length,
-                  model.oov_mask: oov_mask
-              })
+          batch_num = int(math.floor(len(dev_data.records) /
+                                     self.config['batch_size']))
+          corr, total = 0, 0
+          for _ in range(batch_num):
+            X, Y, sent_length, oov_mask = dev_data.get_next()
+            c, t = sess.run(
+                [correct_count, total_count],
+                feed_dict={
+                    model.word_ids: X,
+                    model.labels: Y,
+                    model.sent_length: sent_length,
+                    model.oov_mask: oov_mask
+                })
+            corr += c
+            total += t
           print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
 
         # Exit train loop
@@ -147,16 +153,21 @@ class Experiment(object):
         train_saver.save(sess, self.config['ckpt'],
                          global_step=global_steps)
         # validation
-        X, Y, sent_length, oov_mask = \
-            dev_data.get_next(len(dev_data.records))
-        corr, total = sess.run(
-            [correct_count, total_count],
-            feed_dict={
-                model.word_ids: X,
-                model.labels: Y,
-                model.sent_length: sent_length,
-                model.oov_mask: oov_mask
-            })
+        batch_num = int(math.floor(len(dev_data.records) /
+                                   self.config['batch_size']))
+        corr, total = 0, 0
+        for _ in range(batch_num):
+          X, Y, sent_length, oov_mask = dev_data.get_next()
+          c, t = sess.run(
+              [correct_count, total_count],
+              feed_dict={
+                  model.word_ids: X,
+                  model.labels: Y,
+                  model.sent_length: sent_length,
+                  model.oov_mask: oov_mask
+              })
+          corr += c
+          total += t
         print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
 
   def train_gemb(self):
@@ -226,16 +237,21 @@ class Experiment(object):
         if step % self.config['save_interval'] == 0:
           train_saver.save(sess, self.config['ckpt'])
           # validation
-          X, Y, sent_length, oov_mask = \
-              dev_data.get_next(len(dev_data.records))
-          corr, total = sess.run(
-              [correct_count, total_count],
-              feed_dict={
-                  model.word_ids: X,
-                  model.labels: Y,
-                  model.sent_length: sent_length,
-                  model.oov_mask: oov_mask
-              })
+          batch_num = int(math.floor(len(dev_data.records) /
+                                     self.config['batch_size']))
+          corr, total = 0, 0
+          for _ in range(batch_num):
+            X, Y, sent_length, oov_mask = dev_data.get_next()
+            c, t = sess.run(
+                [correct_count, total_count],
+                feed_dict={
+                    model.word_ids: X,
+                    model.labels: Y,
+                    model.sent_length: sent_length,
+                    model.oov_mask: oov_mask
+                })
+            corr += c
+            total += t
           print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
 
         # Exit train loop
@@ -243,16 +259,21 @@ class Experiment(object):
         train_saver.save(sess, self.config['ckpt'],
                          global_step=global_steps)
         # validation
-        X, Y, sent_length, oov_mask = \
-            dev_data.get_next(len(dev_data.records))
-        corr, total = sess.run(
-            [correct_count, total_count],
-            feed_dict={
-                model.word_ids: X,
-                model.labels: Y,
-                model.sent_length: sent_length,
-                model.oov_mask: oov_mask
-            })
+        batch_num = int(math.floor(len(dev_data.records) /
+                                   self.config['batch_size']))
+        corr, total = 0, 0
+        for _ in range(batch_num):
+          X, Y, sent_length, oov_mask = dev_data.get_next()
+          c, t = sess.run(
+              [correct_count, total_count],
+              feed_dict={
+                  model.word_ids: X,
+                  model.labels: Y,
+                  model.sent_length: sent_length,
+                  model.oov_mask: oov_mask
+              })
+          corr += c
+          total += t
         print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
 
   def test(self):
@@ -283,14 +304,19 @@ class Experiment(object):
       saver.restore(sess, ckpt)
 
       print('Testing ...')
-      X, Y, sent_length, oov_mask = \
-          test_data.get_next(len(test_data.records))
-      corr, total = sess.run(
-          [correct_count, total_count],
-          feed_dict={
-              model.word_ids: X,
-              model.labels: Y,
-              model.sent_length: sent_length,
-              model.oov_mask: oov_mask
-          })
-      print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
+      batch_num = int(math.floor(len(test_data.records) /
+                                 self.config['batch_size']))
+      corr, total = 0, 0
+      for _ in range(batch_num):
+        X, Y, sent_length, oov_mask = test_data.get_next()
+        c, t = sess.run(
+            [correct_count, total_count],
+            feed_dict={
+                model.word_ids: X,
+                model.labels: Y,
+                model.sent_length: sent_length,
+                model.oov_mask: oov_mask
+            })
+        corr += c
+        total += t
+      print('Acc = {}'.format(float(corr) / total))

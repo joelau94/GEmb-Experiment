@@ -11,7 +11,7 @@ python codes/main.py \
     --hidden-dims 256 256 \
     --ckpt models/pos-en-model \
     --max-ckpts 20 \
-    --batch-size 64 \
+    --batch-size 32 \
     --max-steps 1000000 \
     --gemb-steps 1000000 \
     --print-interval 50 \
