@@ -148,27 +148,27 @@ class Experiment(object):
             total += t
           print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
 
-        # Exit train loop
+      # Exit train loop
 
-        train_saver.save(sess, self.config['ckpt'],
-                         global_step=global_steps)
-        # validation
-        batch_num = int(math.floor(len(dev_data.records) /
-                                   self.config['batch_size']))
-        corr, total = 0, 0
-        for _ in range(batch_num):
-          X, Y, sent_length, oov_mask = dev_data.get_next()
-          c, t = sess.run(
-              [correct_count, total_count],
-              feed_dict={
-                  model.word_ids: X,
-                  model.labels: Y,
-                  model.sent_length: sent_length,
-                  model.oov_mask: oov_mask
-              })
-          corr += c
-          total += t
-        print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
+      train_saver.save(sess, self.config['ckpt'],
+                       global_step=global_steps)
+      # validation
+      batch_num = int(math.floor(len(dev_data.records) /
+                                 self.config['batch_size']))
+      corr, total = 0, 0
+      for _ in range(batch_num):
+        X, Y, sent_length, oov_mask = dev_data.get_next()
+        c, t = sess.run(
+            [correct_count, total_count],
+            feed_dict={
+                model.word_ids: X,
+                model.labels: Y,
+                model.sent_length: sent_length,
+                model.oov_mask: oov_mask
+            })
+        corr += c
+        total += t
+      print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
 
   def train_gemb(self):
     train_data = data.Dataset(self.config['train_data_file'],
@@ -254,27 +254,27 @@ class Experiment(object):
             total += t
           print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
 
-        # Exit train loop
+      # Exit train loop
 
-        train_saver.save(sess, self.config['ckpt'],
-                         global_step=global_steps)
-        # validation
-        batch_num = int(math.floor(len(dev_data.records) /
-                                   self.config['batch_size']))
-        corr, total = 0, 0
-        for _ in range(batch_num):
-          X, Y, sent_length, oov_mask = dev_data.get_next()
-          c, t = sess.run(
-              [correct_count, total_count],
-              feed_dict={
-                  model.word_ids: X,
-                  model.labels: Y,
-                  model.sent_length: sent_length,
-                  model.oov_mask: oov_mask
-              })
-          corr += c
-          total += t
-        print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
+      train_saver.save(sess, self.config['ckpt'],
+                       global_step=global_steps)
+      # validation
+      batch_num = int(math.floor(len(dev_data.records) /
+                                 self.config['batch_size']))
+      corr, total = 0, 0
+      for _ in range(batch_num):
+        X, Y, sent_length, oov_mask = dev_data.get_next()
+        c, t = sess.run(
+            [correct_count, total_count],
+            feed_dict={
+                model.word_ids: X,
+                model.labels: Y,
+                model.sent_length: sent_length,
+                model.oov_mask: oov_mask
+            })
+        corr += c
+        total += t
+      print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
 
   def test(self):
     test_data = data.Dataset(self.config['test_data_file'], shuffle=False)
