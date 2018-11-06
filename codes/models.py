@@ -165,7 +165,7 @@ class LSTMwithGEmb(object):
                              reuse=True)
       final_states, outputs = bot_lstm(word_embeddings, sent_length)
 
-    logits, _ = self.get_word_dist(outputs, self.vocab_size, reuse=True)
+    logits, _ = self.get_word_dist(outputs, reuse=True)
     word_one_hot = tf.one_hot(word_ids, self.vocab_size)
     loss = tf.nn.softmax_cross_entropy_with_logits_v2(
         labels=tf.reshape(word_one_hot, [batch_size * max_length, -1]),

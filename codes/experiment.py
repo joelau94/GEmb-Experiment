@@ -193,7 +193,7 @@ class Experiment(object):
                                keep_prob=self.config['keep_prob'],
                                reuse=None)
 
-      _, _, _ = model()
+      _, correct_count, total_count = model()
       gemb_loss = model.gemb_train()
 
       optimizer = tf.train.AdamOptimizer(
@@ -203,7 +203,7 @@ class Experiment(object):
           epsilon=self.config['eps'])
       gemb_params = [var for var in tf.trainable_variables()
                      if 'gemb' in var.op.name]
-      grad = tf.gradients(loss, gemb_params)
+      grad = tf.gradients(gemb_loss, gemb_params)
       clip_grad, _ = tf.clip_by_global_norm(
           grad,
           self.config['clip_norm'],
@@ -220,7 +220,7 @@ class Experiment(object):
       train_saver.restore(sess, ckpt)
 
       print('Training ...')
-      for step in self.config['gemb_steps']:
+      for step in range(self.config['gemb_steps']):
         X, Y, sent_length, oov_mask = \
             train_data.get_next(self.config['batch_size'])
 
