@@ -1,0 +1,1 @@
+python codes_aws/test.py --config-file models/pos-en-config.pkl
