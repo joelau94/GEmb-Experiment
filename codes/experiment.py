@@ -252,12 +252,11 @@ class Experiment(object):
                 })
             corr += c
             total += t
-          print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
+          print('Step {}: Acc = {}'.format(step, float(corr) / total))
 
       # Exit train loop
 
-      train_saver.save(sess, self.config['ckpt'],
-                       global_step=global_steps)
+      train_saver.save(sess, self.config['ckpt'])
       # validation
       batch_num = int(math.floor(len(dev_data.records) /
                                  self.config['batch_size']))
@@ -274,7 +273,7 @@ class Experiment(object):
             })
         corr += c
         total += t
-      print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
+      print('Acc = {}'.format(float(corr) / total))
 
   def test(self):
     test_data = data.Dataset(self.config['test_data_file'], shuffle=False)
