@@ -1,4 +1,4 @@
-python codes/main.py \
+python codes/preprocess.py \
     --dictfile ../data/pos_en/dicts.pkl \
     --train-data-file ../data/pos_en/train.pkl \
     --dev-data-file ../data/pos_en/dev.pkl \
