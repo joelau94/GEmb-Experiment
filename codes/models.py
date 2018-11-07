@@ -264,13 +264,7 @@ class SeqTaggingModel(BiLstmModel):
 
     masks = tf.sequence_mask(self.sent_length, dtype=tf.float32)
 
-    losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
-        labels=tf.reshape(self.labels, [-1]),
-        logits=tf.reshape(scores, [-1, self.num_class])
-    )
-    losses *= tf.reshape(masks, [-1])
-
-    self.loss = tf.reduce_mean(losses)
+    self.loss = tf.contrib.seq2seq.sequence_loss(scores, self.labels, masks)
     correct_count = tf.reduce_sum(
         tf.cast(tf.equal(self.predictions, self.labels),
                 dtype=tf.float32) * masks)

@@ -87,15 +87,11 @@ class Experiment(object):
           beta1=self.config['beta1'],
           beta2=self.config['beta2'],
           epsilon=self.config['eps'])
-      model_params = tf.trainable_variables()
-      grad = tf.gradients(loss, model_params)
-      clip_grad, _ = tf.clip_by_global_norm(
-          grad,
-          self.config['clip_norm'],
-          use_norm=self.config['global_norm'])
-
+      gradients = optimizer.compute_gradients(loss)
+      # Clipping by global norm scales by 0.2 which results in NaNs (not sure why?), this has been changed to scale tensor to a range between -1 and 1
+      gradients = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gradients if grad is not None]
       self.global_step = tf.Variable(0, name='global_step', trainable=False)
-      train_op = optimizer.apply_gradients(zip(clip_grad, model_params),
+      train_op = optimizer.apply_gradients(gradients,
                                            global_step=self.global_step)
 
       sess.run(tf.global_variables_initializer())

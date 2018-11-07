@@ -1,5 +1,4 @@
 python codes/main.py \
-    --use-gemb \
     --config-file models/pos-en-config.pkl \
     --train-data-file data/pos_en/train.pkl \
     --dev-data-file data/pos_en/dev.pkl \
@@ -14,5 +13,5 @@ python codes/main.py \
     --batch-size 32 \
     --max-steps 1000000 \
     --gemb-steps 1000000 \
-    --print-interval 50 \
-    --save-interval 1000
+    --print-interval 1 \
+    --save-interval 1
