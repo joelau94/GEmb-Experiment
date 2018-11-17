@@ -99,14 +99,12 @@ class LSTMwithGEmb(object):
   def __init__(self,
                bot_hidden_dim,
                hidden_dims=None,
-               use_gemb=False,
                vocab_size=None,
                embed_dim=None,
                keep_prob=1.0,
                reuse=None):
     self.bot_hidden_dim = bot_hidden_dim
     self.hidden_dims = hidden_dims
-    self.use_gemb = use_gemb
     self.vocab_size = vocab_size
     self.embed_dim = embed_dim
     self.keep_prob = keep_prob
@@ -124,26 +122,28 @@ class LSTMwithGEmb(object):
                              reuse=self.reuse)
       final_states, outputs = bot_lstm(word_embeddings, sent_length)
 
-    if self.use_gemb:
-      _, word_dist = self.get_word_dist(outputs, reuse=self.reuse)
+    # GEmb Module Start
+    _, word_dist = self.get_word_dist(outputs, reuse=self.reuse)
 
-      batch_size = tf.shape(word_dist)[0]
-      max_length = tf.shape(word_dist)[1]
-      vocab_size = tf.shape(word_dist)[2]
+    batch_size = tf.shape(word_dist)[0]
+    max_length = tf.shape(word_dist)[1]
+    vocab_size = tf.shape(word_dist)[2]
 
-      # (batch, len, vocab) -> (batch * len, vocab)
-      word_dist = tf.reshape(word_dist, [batch_size * max_length, -1])
-      # (batch * len, vocab) x (vocab, embed_dim) -> (batch * len, embed_dim)
-      gembeddings = tf.reshape(tf.matmul(word_dist, embed_matrix),
-                               [batch_size, max_length, -1])
-      oov_mask = tf.expand_dims(oov_mask, axis=-1)
-      gembeddings = gembeddings * oov_mask + word_embeddings * (1. - oov_mask)
-      gembeddings *= tf.expand_dims(
-          tf.sequence_mask(sent_length, dtype=tf.float32),
-          axis=-1)
+    # (batch, len, vocab) -> (batch * len, vocab)
+    word_dist = tf.reshape(word_dist, [batch_size * max_length, -1])
+    # (batch * len, vocab) x (vocab, embed_dim) -> (batch * len, embed_dim)
+    gembeddings = tf.reshape(tf.matmul(word_dist, embed_matrix),
+                             [batch_size, max_length, -1])
+    oov_mask = tf.expand_dims(oov_mask, axis=-1)
+    gembeddings = gembeddings * oov_mask + word_embeddings * (1. - oov_mask)
+    gembeddings *= tf.expand_dims(
+        tf.sequence_mask(sent_length, dtype=tf.float32),
+        axis=-1)
 
-      with tf.variable_scope('bottom_lstm', reuse=True):
-        final_states, outputs = bot_lstm(gembeddings, sent_length)
+    with tf.variable_scope('bottom_lstm', reuse=True):
+      final_states, outputs = bot_lstm(gembeddings, sent_length)
+
+    # GEmb Module End
 
     if self.hidden_dims:
       with tf.variable_scope('stack_lstm', reuse=self.reuse):
@@ -204,19 +204,16 @@ class BiLstmModel(object):
                embed_dim,
                hidden_dims,
                num_class,
-               use_gemb=False,
                keep_prob=1.0,
                reuse=None):
 
     self.num_class = num_class
-    self.use_gemb = use_gemb
     self.keep_prob = keep_prob
     self.reuse = reuse
 
     self.embedder = Embeddings(vocab_size, embed_dim, reuse=reuse)
     self.bilstm = LSTMwithGEmb(hidden_dims[0],
                                hidden_dims[1:],
-                               use_gemb=use_gemb,
                                vocab_size=vocab_size,
                                embed_dim=embed_dim,
                                keep_prob=keep_prob,
@@ -245,13 +242,10 @@ class SeqTaggingModel(BiLstmModel):
 
     self.labels = tf.placeholder(dtype=tf.int64, shape=(None, None))
     embeddings = self.embedder(self.word_ids)
-    if self.use_gemb:
-      _, outputs = self.bilstm(embeddings,
-                               self.sent_length,
-                               oov_mask=self.oov_mask,
-                               embed_matrix=self.embedder.emb)
-    else:
-      _, outputs = self.bilstm(embeddings, self.sent_length)
+    _, outputs = self.bilstm(embeddings,
+                             self.sent_length,
+                             oov_mask=self.oov_mask,
+                             embed_matrix=self.embedder.emb)
 
     hidden_tape = tf.concat(outputs, axis=-1)
 
@@ -279,13 +273,10 @@ class SeqClassifierModel(BiLstmModel):
   def __call__(self):
     self.labels = tf.placeholder(dtype=tf.int64, shape=(None,))
     embeddings = self.embedder(self.word_ids)
-    if self.use_gemb:
-      final_states, _ = self.bilstm(embeddings,
-                                    self.sent_length,
-                                    oov_mask=self.oov_mask,
-                                    embed_matrix=self.embedder.emb)
-    else:
-      final_states, _ = self.bilstm(embeddings, self.sent_length)
+    final_states, _ = self.bilstm(embeddings,
+                                  self.sent_length,
+                                  oov_mask=self.oov_mask,
+                                  embed_matrix=self.embedder.emb)
 
     with tf.variable_scope('output_mlp', reuse=self.reuse):
       feats = tf.nn.dropout(final_states, keep_prob=self.keep_prob)

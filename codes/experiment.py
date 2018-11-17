@@ -19,7 +19,6 @@ class Config(object):
         'test_data_file': '../data/test.pkl',
 
         'task': 'tagging',
-        'use_gemb': True,
         'keep_prob': 0.9,
 
         'vocab_size': 30000,
@@ -57,7 +56,7 @@ class Experiment(object):
   def __init__(self, config):
     self.config = config
 
-  def train(self):
+  def train(self, use_gemb=False):
     train_data = data.Dataset(self.config['train_data_file'],
                               shuffle=True,
                               seed=self.config['seed'])
@@ -76,7 +75,6 @@ class Experiment(object):
                                self.config['embed_dim'],
                                self.config['hidden_dims'],
                                self.config['num_class'],
-                               use_gemb=self.config['use_gemb'],
                                keep_prob=self.config['keep_prob'],
                                reuse=None)
 
@@ -111,6 +109,9 @@ class Experiment(object):
         X, Y, sent_length, oov_mask = \
             train_data.get_next(self.config['batch_size'])
 
+        if not use_gemb:
+          oov_mask = np.zeros_like(oov_mask, dtype=np.float32)
+
         _, step_loss, global_steps = sess.run(
             [train_op, loss, self.global_step],
             feed_dict={
@@ -131,7 +132,11 @@ class Experiment(object):
                                      self.config['batch_size']))
           corr, total = 0, 0
           for _ in range(batch_num):
-            X, Y, sent_length, oov_mask = dev_data.get_next()
+            X, Y, sent_length, oov_mask = \
+                dev_data.get_next(self.config['batch_size'])
+            if not use_gemb:
+              oov_mask = np.zeros_like(oov_mask, dtype=np.float32)
+
             c, t = sess.run(
                 [correct_count, total_count],
                 feed_dict={
@@ -153,7 +158,11 @@ class Experiment(object):
                                  self.config['batch_size']))
       corr, total = 0, 0
       for _ in range(batch_num):
-        X, Y, sent_length, oov_mask = dev_data.get_next()
+        X, Y, sent_length, oov_mask = \
+            dev_data.get_next(self.config['batch_size'])
+        if not use_gemb:
+          oov_mask = np.zeros_like(oov_mask, dtype=np.float32)
+
         c, t = sess.run(
             [correct_count, total_count],
             feed_dict={
@@ -185,7 +194,6 @@ class Experiment(object):
                                self.config['embed_dim'],
                                self.config['hidden_dims'],
                                self.config['num_class'],
-                               use_gemb=self.config['use_gemb'],
                                keep_prob=self.config['keep_prob'],
                                reuse=None)
 
@@ -220,6 +228,9 @@ class Experiment(object):
         X, Y, sent_length, oov_mask = \
             train_data.get_next(self.config['batch_size'])
 
+        # train all words
+        oov_mask = np.ones_like(oov_mask, dtype=np.float32)
+
         _, step_loss = sess.run(
             [train_op, gemb_loss],
             feed_dict={
@@ -237,7 +248,8 @@ class Experiment(object):
                                      self.config['batch_size']))
           corr, total = 0, 0
           for _ in range(batch_num):
-            X, Y, sent_length, oov_mask = dev_data.get_next()
+            X, Y, sent_length, oov_mask = \
+                dev_data.get_next(self.config['batch_size'])
             c, t = sess.run(
                 [correct_count, total_count],
                 feed_dict={
@@ -258,7 +270,8 @@ class Experiment(object):
                                  self.config['batch_size']))
       corr, total = 0, 0
       for _ in range(batch_num):
-        X, Y, sent_length, oov_mask = dev_data.get_next()
+        X, Y, sent_length, oov_mask = \
+            dev_data.get_next(self.config['batch_size'])
         c, t = sess.run(
             [correct_count, total_count],
             feed_dict={
@@ -271,7 +284,7 @@ class Experiment(object):
         total += t
       print('Acc = {}'.format(float(corr) / total))
 
-  def test(self):
+  def test(self, use_gemb=False):
     test_data = data.Dataset(self.config['test_data_file'], shuffle=False)
     if self.config['task'] == 'tagging':
       self.model_class = models.SeqTaggingModel
@@ -285,7 +298,6 @@ class Experiment(object):
                                self.config['embed_dim'],
                                self.config['hidden_dims'],
                                self.config['num_class'],
-                               use_gemb=self.config['use_gemb'],
                                keep_prob=self.config['keep_prob'],
                                reuse=None)
 
@@ -303,7 +315,11 @@ class Experiment(object):
                                  self.config['batch_size']))
       corr, total = 0, 0
       for _ in range(batch_num):
-        X, Y, sent_length, oov_mask = test_data.get_next()
+        X, Y, sent_length, oov_mask = \
+            test_data.get_next(self.config['batch_size'])
+        if use_gemb:
+          oov_mask = np.ones_like(oov_mask, dtype=np.float32)
+
         c, t = sess.run(
             [correct_count, total_count],
             feed_dict={

@@ -1,5 +1,6 @@
 python codes/main.py \
     --config-file models/pos-en-config.pkl \
+    --use-gemb \
     --train-data-file data/pos_en/train.pkl \
     --dev-data-file data/pos_en/dev.pkl \
     --test-data-file data/pos_en/test.pkl \

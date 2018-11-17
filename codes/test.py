@@ -9,6 +9,7 @@ def main():
 
   parser.add_argument('--config-file', type=str,
                       default='../models/config.pkl')
+  parser.add_argument('--use-gemb', dest='use_gemb', action='store_true')
 
   args = parser.parse_args()
 
@@ -16,7 +17,7 @@ def main():
   cfg.load(args.config_file)
 
   exp = experiment.Experiment(cfg.config)
-  exp.test()
+  exp.test(args.use_gemb)
 
 
 if __name__ == '__main__':

@@ -59,16 +59,12 @@ def main():
   if not args.start_over and os.path.exists(args.config_file):
     cfg.load(args.config_file)
   else:
-    if args.train_gemb:
-      print('Model not initialized!')
-      sys.exit(1)
     cfg.config = {
         'train_data_file': args.train_data_file,
         'dev_data_file': args.dev_data_file,
         'test_data_file': args.test_data_file,
 
         'task': args.task,
-        'use_gemb': args.use_gemb,
         'keep_prob': args.keep_prob,
 
         'vocab_size': vocab_size,
@@ -101,7 +97,7 @@ def main():
   if args.train_gemb:
     exp.train_gemb()
   else:
-    exp.train()
+    exp.train(args.use_gemb)
 
 
 if __name__ == '__main__':
