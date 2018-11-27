@@ -25,9 +25,10 @@ class Config(object):
         'embed_dim': 300,
         'hidden_dims': [256, 256],
         'num_class': 50,
+        'early_stop': False,
 
         'seed': 23,
-        'lr': 0.1,
+        'lr': 0.001,
         'beta1': 0.9,
         'beta2': 0.99,
         'eps': 1e-8,
@@ -55,6 +56,8 @@ class Experiment(object):
 
   def __init__(self, config):
     self.config = config
+    self.patience_cnt = 0
+    self.max_acc = 0.
 
   def train(self, use_gemb=False):
     train_data = data.Dataset(self.config['train_data_file'],
@@ -85,12 +88,26 @@ class Experiment(object):
           beta1=self.config['beta1'],
           beta2=self.config['beta2'],
           epsilon=self.config['eps'])
+
+      # Clip by value.
       gradients = optimizer.compute_gradients(loss)
       # Clipping by global norm scales by 0.2 which results in NaNs (not sure why?), this has been changed to scale tensor to a range between -1 and 1
       gradients = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gradients if grad is not None]
       self.global_step = tf.Variable(0, name='global_step', trainable=False)
       train_op = optimizer.apply_gradients(gradients,
                                            global_step=self.global_step)
+
+      # Clip by global norm.
+      #model_params = tf.trainable_variables()
+      #grad = tf.gradients(loss, model_params)
+      #clip_grad, _ = tf.clip_by_global_norm(
+      #    grad,
+      #    self.config['clip_norm'],
+      #    use_norm=self.config['global_norm'])
+
+      #self.global_step = tf.Variable(0, name='global_step', trainable=False)
+      #train_op = optimizer.apply_gradients(zip(clip_grad, model_params),
+      #                                     global_step=self.global_step)
 
       sess.run(tf.global_variables_initializer())
 
@@ -125,55 +142,11 @@ class Experiment(object):
           print('Step {}: Loss = {}'.format(global_steps, step_loss))
 
         if global_steps % self.config['save_interval'] == 0:
-          train_saver.save(sess, self.config['ckpt'],
-                           global_step=global_steps)
-          # validation
-          batch_num = int(math.floor(len(dev_data.records) /
-                                     self.config['batch_size']))
-          corr, total = 0, 0
-          for _ in range(batch_num):
-            X, Y, sent_length, oov_mask = \
-                dev_data.get_next(self.config['batch_size'])
-            if not use_gemb:
-              oov_mask = np.zeros_like(oov_mask, dtype=np.float32)
-
-            c, t = sess.run(
-                [correct_count, total_count],
-                feed_dict={
-                    model.word_ids: X,
-                    model.labels: Y,
-                    model.sent_length: sent_length,
-                    model.oov_mask: oov_mask
-                })
-            corr += c
-            total += t
-          print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
+          if not self._validate_save(model, sess, train_saver, dev_data, use_gemb,
+                                     global_steps, correct_count, total_count):
+            break
 
       # Exit train loop
-
-      train_saver.save(sess, self.config['ckpt'],
-                       global_step=global_steps)
-      # validation
-      batch_num = int(math.floor(len(dev_data.records) /
-                                 self.config['batch_size']))
-      corr, total = 0, 0
-      for _ in range(batch_num):
-        X, Y, sent_length, oov_mask = \
-            dev_data.get_next(self.config['batch_size'])
-        if not use_gemb:
-          oov_mask = np.zeros_like(oov_mask, dtype=np.float32)
-
-        c, t = sess.run(
-            [correct_count, total_count],
-            feed_dict={
-                model.word_ids: X,
-                model.labels: Y,
-                model.sent_length: sent_length,
-                model.oov_mask: oov_mask
-            })
-        corr += c
-        total += t
-      print('Step {}: Acc = {}'.format(global_steps, float(corr) / total))
 
   def train_gemb(self):
     train_data = data.Dataset(self.config['train_data_file'],
@@ -311,23 +284,49 @@ class Experiment(object):
       saver.restore(sess, ckpt)
 
       print('Testing ...')
-      batch_num = int(math.floor(len(test_data.records) /
-                                 self.config['batch_size']))
-      corr, total = 0, 0
-      for _ in range(batch_num):
-        X, Y, sent_length, oov_mask = \
-            test_data.get_next(self.config['batch_size'])
-        if use_gemb:
-          oov_mask = np.ones_like(oov_mask, dtype=np.float32)
+      self._validate(model, sess, test_data, use_gemb, correct_count, total_count)
 
-        c, t = sess.run(
-            [correct_count, total_count],
-            feed_dict={
-                model.word_ids: X,
-                model.labels: Y,
-                model.sent_length: sent_length,
-                model.oov_mask: oov_mask
-            })
-        corr += c
-        total += t
-      print('Acc = {}'.format(float(corr) / total))
+
+  def _validate(self, model, sess, data, use_gemb, correct_count, total_count):
+    batch_num = int(math.floor(len(data.records) /
+                               self.config['batch_size']))
+    corr, total = 0, 0
+    for _ in range(batch_num):
+      X, Y, sent_length, oov_mask = \
+          data.get_next(self.config['batch_size'])
+      if not use_gemb:
+        oov_mask = np.zeros_like(oov_mask, dtype=np.float32)
+
+      c, t = sess.run(
+          [correct_count, total_count],
+          feed_dict={
+              model.word_ids: X,
+              model.labels: Y,
+              model.sent_length: sent_length,
+              model.oov_mask: oov_mask
+          })
+      corr += c
+      total += t
+    acc = float(corr)/total
+    return acc
+
+
+  def _validate_save(self, model, sess, train_saver, data, use_gemb, global_steps,
+                     correct_count, total_count):
+    # Validation.
+    acc = self._validate(model, sess, data, use_gemb, correct_count, total_count)
+    print('Step: {} Acc = {}'.format(global_steps, acc))
+
+    if self.config['early_stop'] and acc < self.max_acc:
+      self.patience_cnt += 1
+      if self.patience_cnt == self.config['patience']:
+        print('Accuracy has been lower than the max accuracy of {} '
+              'for {} intervals.'.format(self.max_acc, self.patience_cnt))
+        return False
+    else:
+      self.max_acc = max(acc, self.max_acc)
+      self.patience_cnt = 0
+      train_saver.save(sess, self.config['ckpt'],
+                       global_step=global_steps)
+
+    return True

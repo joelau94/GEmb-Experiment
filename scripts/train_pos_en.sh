@@ -1,18 +1,22 @@
-python codes/main.py \
-    --config-file models/pos-en-config.pkl \
+path=$1
+
+python2 codes/main.py \
+    --config-file models/${path}-config.pkl \
     --use-gemb \
-    --train-data-file data/pos_en/train.pkl \
-    --dev-data-file data/pos_en/dev.pkl \
-    --test-data-file data/pos_en/test.pkl \
+    --train-data-file data/$path/train.pkl \
+    --dev-data-file data/$path/dev.pkl \
+    --test-data-file data/$path/test.pkl \
     --task tagging \
     --keep-prob 0.9 \
-    --dictfile data/pos_en/dicts.pkl \
+    --dictfile data/$path/dicts.pkl \
     --embed-dim 300 \
     --hidden-dims 256 256 \
-    --ckpt models/pos-en-model \
+    --ckpt models/${path}-model \
     --max-ckpts 20 \
     --batch-size 32 \
-    --max-steps 1000000 \
-    --gemb-steps 1000000 \
-    --print-interval 1 \
-    --save-interval 1
+    --max-steps 100000 \
+    --gemb-steps 100000 \
+    --print-interval 100 \
+    --save-interval 300 \
+    --early-stop \
+    --patience 5

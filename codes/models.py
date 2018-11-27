@@ -15,7 +15,7 @@ class Embeddings(object):
     self.embed_dim = embed_dim
     self.reuse = reuse
 
-    initializer = tf.zeros_initializer()
+    initializer = tf.initializers.random_normal()
     with tf.variable_scope('Embeddings', reuse=self.reuse):
       self.emb = tf.get_variable(
           'emb',

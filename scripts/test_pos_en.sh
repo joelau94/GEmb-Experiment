@@ -1,1 +1,3 @@
-python codes/test.py --config-file models/pos-en-config.pkl --use-gemb
+path=$1
+
+python2 codes/test.py --config-file models/${path}-config.pkl --use-gemb

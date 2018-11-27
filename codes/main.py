@@ -32,6 +32,10 @@ def main():
   parser.add_argument('--hidden-dims', type=int, nargs='+',
                       default=[256,256])
 
+  parser.add_argument('--early-stop', action='store_true')
+  parser.add_argument('--patience', type=int, default=5)
+  parser.add_argument('--min-delta', type=float, default=0.01)
+
   parser.add_argument('--seed', type=int, default=23)
   parser.add_argument('--lr', type=float, default=0.1)
   parser.add_argument('--beta1', type=float, default=0.9)
@@ -71,6 +75,10 @@ def main():
         'embed_dim': args.embed_dim,
         'hidden_dims': args.hidden_dims,
         'num_class': num_class,
+
+        'early_stop': args.early_stop,
+        'patience': args.patience,
+        'min_delta': args.min_delta,
 
         'seed': args.seed,
         'lr': args.lr,
